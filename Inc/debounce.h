@@ -1,9 +1,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/* Instructions:
+/*
+ * Setup instructions:
  *
- * 1. Create GPIO reading function.
+ * 1. Define GPIO read function.
  * This function acts as a wrapper for your platform's GPIO read driver.
  * It should accept a uint8_t input representing a pin and output a bool
  * representing the state of that pin.
@@ -16,8 +17,8 @@
  *   }
  * }
  *
- * 2. Create DB_Button array.
- * Create an array of DB_Button structures, and enter the pin and threshold fields.
+ * 2. Define a DB_Button array.
+ * Define an array of DB_Button structures, and enter the pin and threshold fields.
  * The pin number corresponds to the pin your function from earlier will read.
  * The threshold determines how confident the debouncer must be before considering
  * the button state to be changed.
@@ -34,7 +35,7 @@
  * Note: the DB_Handle must be declared in a scope where the call to DB_Update
  * in the next step will still have access to it.
  * ex:
- * DB_Handle db;
+ * DB_Handle db; // may be declared in a higher scope
  * uint8_t count = sizeof(buttons)/sizeof(DB_Button); //calculate length of buttons array
  * DB_Init(&db, buttons, count, Read_GPIO);
  *
@@ -46,6 +47,7 @@
  * DB_Update(&db);
  *
  * 5. Read button states as needed
+ * ex:
  * bool x = DB_Rd(&buttons[1]);
  */
 
@@ -56,6 +58,17 @@
 extern "C" {
 #endif
 
+/*
+ * Represents a GPIO input pin.
+ *
+ * const uint8_t pin: An integer pin ID. Pin ID should correspond to which pin
+ *   will be read by the DB_GPIO_Read function provided by the user in
+ *   DB_Handle.
+ *
+ * const uint_fast8_t threshold: The threshold required to change the debounced
+ *   state of the DB_Button. Higher values respond more slowly, but are more
+ *   tolerant to chatter and noise.
+ */
 typedef struct {
 	// user-defined
 	const uint8_t pin;
@@ -66,21 +79,47 @@ typedef struct {
 	volatile bool _state;
 } DB_Button;
 
+/*
+ * A function pointer to a user-defined wrapper function that takes in a
+ *   uint8_t value as a pin ID and returns a boolean corresponding to the
+ *   platform's GPIO driver output.
+ */
 typedef bool (*DB_GPIO_Read)(uint8_t pin);
 
+/*
+ * Debouncer handle, used to keep track of buttons and update debounced states.
+ *
+ * DB_Button *btns: An array of DB_Button structures corresponding to all
+ *   pins the user wants debounced.
+ *
+ * uint8_t count: The number of DB_Button structures in the btns array.
+ *
+ * DB_GPIO_Read rd: Function pointer to the user-defind GPIO read wrapper for
+ *   the platform's GPIO driver.
+ */
 typedef struct {
 	DB_Button *btns;
 	uint8_t count;
 	DB_GPIO_Read rd;
 } DB_Handle;
 
-// Initialize all button states and establish a handle structure
+/*
+ * Initialize all button states and populate a given DB_Handle structure.
+ */
 void DB_Init(DB_Handle *db, DB_Button *buttons, uint8_t count, DB_GPIO_Read rd);
 
-// Update all buttons' states using buttons' user-defined readers
+/*
+ * Update each button's state using DB_Handle's user-defined GPIO reader.
+ *
+ * Run on a consistent tick. May be called from an ISR but is NOT generally
+ * thread safe. Debounce updates follow a single-writer multi-reader pattern.
+ */
 void DB_Update(DB_Handle *db);
 
-// Read debounced state of button
+/*
+ * Return the debounced state of a button as a boolean value. Returned state
+ * will reflect the button state during the last DB_Update call.
+ */
 bool DB_Rd(const DB_Button *button);
 
 #ifdef __cplusplus
