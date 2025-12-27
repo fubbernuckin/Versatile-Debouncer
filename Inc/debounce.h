@@ -76,7 +76,7 @@ typedef struct {
 
 	// private
 	uint_fast8_t _counter;
-	volatile bool _state;
+	volatile uint8_t _state;
 } DB_Button;
 
 /*
@@ -121,6 +121,20 @@ void DB_Update(DB_Handle *db);
  * will reflect the button state during the last DB_Update call.
  */
 bool DB_Rd(const DB_Button *button);
+
+/*
+ * Returns true if the debounced state of the button has gone from false to
+ * true since the last DB_Rising call.
+ * Clears the rising edge flag on the button every time it is called.
+ */
+bool DB_Rising(DB_Button *button);
+
+/*
+ * Returns true if the debounced state of the button has gone from true to
+ * false since the last DB_Falling call.
+ * Clears the falling edge flag on the button every time it is called.
+ */
+bool DB_Falling(DB_Button *button);
 
 #ifdef __cplusplus
 }
