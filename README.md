@@ -39,7 +39,9 @@ DB_Button buttons[] = {
 
 3. Initialize debouncer
 
-Declare an empty DB_Handle and run DB_Init using your handle, button array, button array length, and the pin reading function you wrote in step 1. Note: the DB_Handle must be declared in a scope where the call to DB_Update in the next step will still have access to it.
+Declare an empty DB_Handle and run DB_Init using your handle, button array, button array length, and the pin reading function you wrote in step 1.
+
+Note: the DB_Handle must be declared in a scope where the call to DB_Update in the next step will still have access to it.
 
 ex:
 
