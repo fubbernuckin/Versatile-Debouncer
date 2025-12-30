@@ -4,7 +4,7 @@ Robust, simple, platform independent, fast button debouncer.
 
 Written in C, this library uses a configurable integrator method to handle button chatter and noise in software. 
 
-## How to set up
+## Setup Instructions
 
 Instructions are also present in header file
 
@@ -23,9 +23,9 @@ bool Read_GPIO(uint8_t pin) {
 }
 ```
 
-2. Define a DB_Button array
+2. Define a `DB_Button` array
 
-Define an array of DB_Button structures, and enter the pin and threshold fields. The pin number corresponds to the pin your function from earlier will read. The threshold determines how confident the debouncer must be before considering the button state to be changed. 
+Define an array of `DB_Button` structures, and enter the pin and threshold fields. The pin number corresponds to the pin your function from earlier will read. The threshold determines how confident the debouncer must be before considering the button state to be changed. 
 
 Note: threshold must not equal 0
 
@@ -39,9 +39,9 @@ DB_Button buttons[] = {
 
 3. Initialize debouncer
 
-Declare an empty DB_Handle and run DB_Init using your handle, button array, button array length, and the pin reading function you wrote in step 1.
+Declare an empty `DB_Handle` and run `DB_Init` using your handle, button array, button array length, and the pin reading function you wrote in step 1.
 
-Note: the DB_Handle must be declared in a scope where the call to DB_Update in the next step will still have access to it.
+Note: the `DB_Handle` must be declared in a scope where the call to `DB_Update` in the next step will still have access to it.
 
 ex:
 
@@ -51,11 +51,11 @@ uint8_t count = sizeof(buttons)/sizeof(DB_Button); //calculate length of buttons
 DB_Init(&db, buttons, count, Read_GPIO);
 ```
 
-4. Call DB_Update() on a consistent tick, like a main loop or hardware timer.
+4. Call `DB_Update` on a consistent tick, like a main loop or hardware timer.
 
-Every time DB_Update is called, it will query every button in the DB_Handle you provided, and update the debounced state of each button. 
+Every time `DB_Update` is called, it will query every button in the `DB_Handle` you provided, and update the debounced state of each button. 
 
-Note: dramatically irregular timing of DB_Update calls may negatively affect debounce quality.
+Note: dramatically irregular timing of `DB_Update` calls may negatively affect debounce quality.
 
 ex:
 
@@ -63,10 +63,8 @@ ex:
 DB_Update(&db);
 ```
 
-5. Read button states as needed
+## Usage
 
-ex:
+Documentation is in `debounce.h`.
 
-```C
-bool x = DB_Rd(&buttons[1]);
-```
+Library supports reading the debounced state of GPIO pins, as well as detecting rising and falling edges. Edge detection is implementation is pull-based, ie. there are no callbacks.
