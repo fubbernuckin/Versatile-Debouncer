@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <debounce.h>
 
-const enum _state_bit_mask {
+enum _state_bit_mask {
 	curr_state = 0x01,
 	falling_edge = 0x02,
 	rising_edge = 0x04

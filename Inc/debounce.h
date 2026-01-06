@@ -39,16 +39,12 @@
  * uint8_t count = sizeof(buttons)/sizeof(DB_Button); //calculate length of buttons array
  * DB_Init(&db, buttons, count, Read_GPIO);
  *
- * 4. Call DB_Update() on a consistent tick, like a main loop or hardware timer.
+ * 4. Call DB_Update() at a relatively consistent interval.
  * Every time DB_Update is called, it will query every button in the DB_Handle
  * you provided, and update the debounced state of each button.
  * Note: dramatically irregular timing of DB_Update calls may negatively affect debounce quality.
  * ex:
  * DB_Update(&db);
- *
- * 5. Read button states as needed
- * ex:
- * bool x = DB_Rd(&buttons[1]);
  */
 
 #ifndef INC_DEBOUNCE_H_
@@ -119,6 +115,8 @@ void DB_Update(DB_Handle *db);
 /*
  * Return the debounced state of a button as a boolean value. Returned state
  * will reflect the button state during the last DB_Update call.
+ * ex:
+ * bool x = DB_Rd(&buttons[1]);
  */
 bool DB_Rd(const DB_Button *button);
 
@@ -126,6 +124,8 @@ bool DB_Rd(const DB_Button *button);
  * Returns true if the debounced state of the button has gone from false to
  * true since the last DB_Rising call.
  * Clears the rising edge flag on the button every time it is called.
+ * ex:
+ * bool x = DB_Rising(&buttons[1]);
  */
 bool DB_Rising(DB_Button *button);
 
@@ -133,6 +133,8 @@ bool DB_Rising(DB_Button *button);
  * Returns true if the debounced state of the button has gone from true to
  * false since the last DB_Falling call.
  * Clears the falling edge flag on the button every time it is called.
+ * ex:
+ * bool x = DB_Falling(&buttons[1]);
  */
 bool DB_Falling(DB_Button *button);
 
