@@ -47,6 +47,8 @@
  * DB_Update(&db);
  */
 
+#define MAX_EVENTS 8
+
 #ifndef INC_DEBOUNCE_H_
 #define INC_DEBOUNCE_H_
 
@@ -76,6 +78,26 @@ typedef struct {
 } DB_Button;
 
 /*
+ * Contains all possible button event types.
+ */
+typedef enum {
+	RISING,
+	FALLING
+} DB_Event_Type;
+
+/*
+ * Represents a single button event for a given pin.
+ *
+ * const uint8_t pin: The pin ID where the button event occurred.
+ *
+ * const DB_Event_Type ev_type: The type of button event that occurred.
+ */
+typedef struct {
+	const uint8_t pin;
+	const DB_Event_Type ev_type;
+} DB_Event;
+
+/*
  * A function pointer to a user-defined wrapper function that takes in a
  *   uint8_t value as a pin ID and returns a boolean corresponding to the
  *   platform's GPIO driver output.
@@ -92,11 +114,17 @@ typedef bool (*DB_GPIO_Read)(uint8_t pin);
  *
  * DB_GPIO_Read rd: Function pointer to the user-defind GPIO read wrapper for
  *   the platform's GPIO driver.
+ *
+ * DB_Event ev_queue[MAX_EVENTS]: a queue containing recent events detected
+ *   during DB_Update.
  */
 typedef struct {
 	DB_Button *btns;
 	uint8_t count;
 	DB_GPIO_Read rd;
+	uint8_t front;
+	uint8_t back;
+	DB_Event ev_queue[MAX_EVENTS];
 } DB_Handle;
 
 /*
@@ -137,6 +165,19 @@ bool DB_Rising(DB_Button *button);
  * bool x = DB_Falling(&buttons[1]);
  */
 bool DB_Falling(DB_Button *button);
+
+/*
+ * Returns the oldest event in the event queue, then removes it from the queue.
+ */
+DB_Event DB_Pop_Event(DB_Handle *db);
+
+/*
+ * Private.
+ *
+ * Adds an event to the event queue.
+ */
+void _DB_Enqueue_Event(DB_Handle *db, DB_Event ev);
+
 
 #ifdef __cplusplus
 }
