@@ -74,7 +74,7 @@ typedef struct {
 
 	// private
 	uint_fast8_t _counter;
-	volatile uint8_t _state;
+	uint8_t _state;
 } DB_Button;
 
 /*
@@ -135,8 +135,7 @@ void DB_Init(DB_Handle *db, DB_Button *buttons, uint8_t count, DB_GPIO_Read rd);
 /*
  * Update each button's state using DB_Handle's user-defined GPIO reader.
  *
- * Run on a consistent tick. May be called from an ISR but is NOT generally
- * thread safe. Debounce updates follow a single-writer multi-reader pattern.
+ * Run on a consistent tick. NOT ISR or thread safe.
  */
 void DB_Update(DB_Handle *db);
 
