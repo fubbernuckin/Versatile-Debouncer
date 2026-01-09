@@ -44,7 +44,8 @@
  * 4. Call DB_Update() at a relatively consistent interval.
  * Every time DB_Update is called, it will query every button in the DB_Handle
  * you provided, and update the debounced state of each button.
- * Note: dramatically irregular timing of DB_Update calls may negatively affect debounce quality.
+ * Note: dramatically irregular timing of DB_Update calls may negatively affect
+ *   debounce quality.
  * ex:
  * DB_Update(&db);
  */
@@ -83,8 +84,8 @@ typedef struct {
  * Contains all possible button event types.
  */
 typedef enum {
-	RISING,
-	FALLING
+	DB_RISING_EDGE,
+	DB_FALLING_EDGE
 } DB_Event_Type;
 
 /*
@@ -151,7 +152,7 @@ void DB_Update(DB_Handle *db);
  * ex:
  * bool x = DB_Rd(&buttons[1]);
  */
-bool DB_Rd(const DB_Button *button);
+bool DB_Rd(const DB_Button *btn);
 
 /*
  * Returns true if the debounced state of the button has gone from false to
@@ -160,7 +161,7 @@ bool DB_Rd(const DB_Button *button);
  * ex:
  * bool x = DB_Rising(&buttons[1]);
  */
-bool DB_Rising(DB_Button *button);
+bool DB_Rising(DB_Button *btn);
 
 /*
  * Returns true if the debounced state of the button has gone from true to
@@ -169,7 +170,17 @@ bool DB_Rising(DB_Button *button);
  * ex:
  * bool x = DB_Falling(&buttons[1]);
  */
-bool DB_Falling(DB_Button *button);
+bool DB_Falling(DB_Button *btn);
+
+/*
+ * Returns true if the debounced state of the button has changed since the last
+ * DB_Falling call.
+ * Clears the rising and falling edge flags on the button every time it is
+ * called.
+ * ex:
+ * bool x = DB_Falling(&buttons[1]);
+ */
+bool DB_Changed(DB_Button *btn);
 
 
 #ifdef __cplusplus

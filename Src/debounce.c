@@ -44,7 +44,7 @@ void DB_Update(DB_Handle *db) {
 						// event callback
 						DB_Event ev = {
 							.btn = btn,
-							.ev_type = RISING
+							.ev_type = DB_RISING_EDGE
 						};
 						db->cb(ev);
 					}
@@ -60,9 +60,10 @@ void DB_Update(DB_Handle *db) {
 				if ((btn->_state & curr_state) == 1) {
 					btn->_state = btn->_state | falling_edge; // set falling edge bit
 					if (db->cb != NULL) {
+						// event callback
 						DB_Event ev = {
 							.btn = btn,
-							.ev_type = FALLING
+							.ev_type = DB_FALLING_EDGE
 						};
 						db->cb(ev);
 					}
@@ -88,6 +89,14 @@ bool DB_Rising(DB_Button *btn) {
 bool DB_Falling(DB_Button *btn) {
 	if ((btn->_state & falling_edge) != 0) {
 		btn->_state = btn->_state & ~falling_edge; // clear falling edge bit
+		return true;
+	}
+	return false;
+}
+
+bool DB_Changed(DB_Button *btn) {
+	if ((btn->_state & (rising_edge | falling_edge)) != 0) {
+		btn->_state = btn->_state & ~(rising_edge | falling_edge); // clear rising and falling edge bits
 		return true;
 	}
 	return false;
