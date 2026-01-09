@@ -8,7 +8,7 @@ enum _state_bit_mask {
 	rising_edge = 0x04
 };
 
-void DB_Init(DB_Handle *db, DB_Button *buttons, uint8_t count, DB_GPIO_Read rd) {
+void DB_Init(DB_Handle *db, DB_Button *buttons, uint8_t count, DB_GPIO_Read rd, DB_Event_Callback cb) {
 	for (int i = 0; i < count; i++) {
 		bool in = rd(buttons[i].pin);
 		buttons[i]._state = in;
@@ -17,8 +17,7 @@ void DB_Init(DB_Handle *db, DB_Button *buttons, uint8_t count, DB_GPIO_Read rd) 
 	db->btns = buttons;
 	db->count = count;
 	db->rd = rd;
-	db->front = 0;
-	db->back = 0;
+	db->cb = cb;
 }
 
 void DB_Update(DB_Handle *db) {
@@ -41,11 +40,14 @@ void DB_Update(DB_Handle *db) {
 			else {
 				if ((btn->_state & curr_state) == 0) {
 					btn->_state = btn->_state | rising_edge; // set rising edge bit
-					DB_Event ev = {
-							.pin = btn->pin,
+					if (db->cb != NULL) {
+						// event callback
+						DB_Event ev = {
+							.btn = btn,
 							.ev_type = RISING
-					};
-					_DB_Push_Event(db, ev);
+						};
+						db->cb(ev);
+					}
 				}
 				btn->_state = btn->_state | curr_state; // set state bit
 			}
@@ -57,11 +59,13 @@ void DB_Update(DB_Handle *db) {
 			else {
 				if ((btn->_state & curr_state) == 1) {
 					btn->_state = btn->_state | falling_edge; // set falling edge bit
-					DB_Event ev = {
-							.pin = btn->pin,
+					if (db->cb != NULL) {
+						DB_Event ev = {
+							.btn = btn,
 							.ev_type = FALLING
-					};
-					_DB_Push_Event(db, ev);
+						};
+						db->cb(ev);
+					}
 				}
 				btn->_state = btn->_state & ~curr_state; // clear state bit
 			}
@@ -87,22 +91,5 @@ bool DB_Falling(DB_Button *btn) {
 		return true;
 	}
 	return false;
-}
-
-DB_Event *DB_Pop_Event(DB_Handle *db) {
-	if (db->back == db->front) {
-		return 0; // TODO: check if this is handled as expected in test context.
-	}
-	DB_Event *ev = &db->ev_queue[db->front];
-	db->front = (db->front + 1) % EVENT_QUEUE_SIZE;
-	return ev;
-}
-
-void _DB_Push_Event(DB_Handle *db, DB_Event ev) {
-	db->ev_queue[db->back] = ev;
-	db->back = (db->back + 1) % EVENT_QUEUE_SIZE;
-	if (db->back == db->front) {
-		db->front = (db->back + 1) % EVENT_QUEUE_SIZE; // overflow, dump event.
-	}
 }
 

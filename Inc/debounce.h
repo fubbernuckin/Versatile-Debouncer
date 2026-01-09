@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 /*
  * Setup instructions:
@@ -19,9 +20,10 @@
  *
  * 2. Define a DB_Button array.
  * Define an array of DB_Button structures, and enter the pin and threshold fields.
- * The pin number corresponds to the pin your function from earlier will read.
+ * The pin number corresponds to the pin that your function from earlier will read.
  * The threshold determines how confident the debouncer must be before considering
  * the button state to be changed.
+ * This library will use pointers to these buttons to access and identify them.
  * Note: threshold must not equal 0
  * ex:
  * DB_Button buttons[] = {
@@ -37,7 +39,7 @@
  * ex:
  * DB_Handle db; // may be declared in a higher scope
  * uint8_t count = sizeof(buttons)/sizeof(DB_Button); //calculate length of buttons array
- * DB_Init(&db, buttons, count, Read_GPIO);
+ * DB_Init(&db, buttons, count, Read_GPIO, NULL);
  *
  * 4. Call DB_Update() at a relatively consistent interval.
  * Every time DB_Update is called, it will query every button in the DB_Handle
@@ -86,14 +88,14 @@ typedef enum {
 } DB_Event_Type;
 
 /*
- * Represents a single button event for a given pin.
+ * Represents a single button event for a given button.
  *
- * const uint8_t pin: The pin ID where the button event occurred.
+ * const DB_Button *btn: a pointer to the button where the event occurred.
  *
  * const DB_Event_Type ev_type: The type of button event that occurred.
  */
 typedef struct {
-	uint8_t pin;
+	DB_Button *btn;
 	DB_Event_Type ev_type;
 } DB_Event;
 
@@ -103,6 +105,12 @@ typedef struct {
  *   platform's GPIO driver output.
  */
 typedef bool (*DB_GPIO_Read)(uint8_t pin);
+
+/*
+ * A function pointer to a user-defined event handler function that takes in
+ *   a DB_Event struct.
+ */
+typedef void (*DB_Event_Callback)(DB_Event ev);
 
 /*
  * Debouncer handle, used to keep track of buttons and update debounced states.
@@ -115,22 +123,20 @@ typedef bool (*DB_GPIO_Read)(uint8_t pin);
  * DB_GPIO_Read rd: Function pointer to the user-defind GPIO read wrapper for
  *   the platform's GPIO driver.
  *
- * DB_Event ev_queue[EVENT_QUEUE_SIZE]: a queue containing recent events detected
- *   during DB_Update.
+ * DB_Event_Callback: Function pointer to user-defind event manager. Set to
+ *   NULL to disable callbacks.
  */
 typedef struct {
 	DB_Button *btns;
 	uint8_t count;
 	DB_GPIO_Read rd;
-	uint8_t front;
-	uint8_t back;
-	DB_Event ev_queue[EVENT_QUEUE_SIZE];
+	DB_Event_Callback cb;
 } DB_Handle;
 
 /*
  * Initialize all button states and populate a given DB_Handle structure.
  */
-void DB_Init(DB_Handle *db, DB_Button *buttons, uint8_t count, DB_GPIO_Read rd);
+void DB_Init(DB_Handle *db, DB_Button *buttons, uint8_t count, DB_GPIO_Read rd, DB_Event_Callback cb);
 
 /*
  * Update each button's state using DB_Handle's user-defined GPIO reader.
@@ -164,18 +170,6 @@ bool DB_Rising(DB_Button *button);
  * bool x = DB_Falling(&buttons[1]);
  */
 bool DB_Falling(DB_Button *button);
-
-/*
- * Returns the oldest event in the event queue, then removes it from the queue.
- */
-DB_Event *DB_Pop_Event(DB_Handle *db);
-
-/*
- * Private.
- *
- * Adds an event to the event queue.
- */
-void _DB_Push_Event(DB_Handle *db, DB_Event ev);
 
 
 #ifdef __cplusplus
