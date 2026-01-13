@@ -3,7 +3,7 @@
 #include <stddef.h>
 
 /*
- * Setup instructions:
+ * Basic setup instructions:
  *
  * 1. Define GPIO read function.
  * This function acts as a wrapper for your platform's GPIO read driver.
@@ -22,23 +22,25 @@
  * Define an array of DB_Button structures, and enter the pin and threshold fields.
  * The pin number corresponds to the pin that your function from earlier will read.
  * The threshold determines how confident the debouncer must be before considering
- * the button state to be changed.
+ * the button state to be changed. Threshold also determines the minimum number of
+ * DB_Update calls required before the state can change.
  * This library will use pointers to these buttons to access and identify them.
  * Note: threshold must not equal 0
  * ex:
  * DB_Button buttons[] = {
  *   {.pin = 4, .threshold = 20},
- *   {.pin = 23, .threshold = 1} // threshold of 1 means button is not debounced
+ *   {.pin = 23, .threshold = 8}
  * };
  *
  * 3. Initialize debouncer.
  * Declare an empty DB_Handle and run DB_Init using your handle, button array,
  * button array length, and the pin reading function you wrote in step 1.
+ *
  * Note: the DB_Handle must be declared in a scope where the call to DB_Update
  * in the next step will still have access to it.
  * ex:
  * DB_Handle db; // may be declared in a higher scope
- * uint8_t count = sizeof(buttons)/sizeof(DB_Button); //calculate length of buttons array
+ * uint8_t count = sizeof(buttons)/sizeof(DB_Button); // calculate length of buttons array
  * DB_Init(&db, buttons, count, Read_GPIO, NULL);
  *
  * 4. Call DB_Update() at a relatively consistent interval.
@@ -48,6 +50,53 @@
  *   debounce quality.
  * ex:
  * DB_Update(&db);
+ */
+
+/*
+ * Button state:
+ * You can read the debounced state of any button by calling DB_Rd and passing
+ * your button struct as an argument.
+ * ex:
+ * bool state = DB_Rd(buttons[0]);
+ */
+
+/*
+ * Events:
+ * There are two ways to receive button events, callbacks and polling, depending
+ * on what makes the most sense for your application.
+ *
+ * Polling is simpler to use, where a polling function is called and returns
+ * whether or not that event has happened since the last time it was requested.
+ * Available polling functions are DB_Rising, DB_Falling, and DB_Changed, which
+ * check whether or not there has been a rising edge, falling edge, or state
+ * change on the provided button struct. Since events are detected during
+ * DB_Update, you can call these immediately after DB_Update to ensure no events
+ * are missed.
+ * Note: It is highly recommended to EITHER poll for rising/falling edges, OR
+ * poll for state changes on any given button as polling for state changes can
+ * interfere with calls to rising/falling edges and vice versa.
+ * ex:
+ * bool button_pressed = DB_Falling(buttons[0]);
+ *
+ * Callbacks are more complex to set up, but offer greater flexibility.
+ *
+ * 1. Create an event handler.
+ * This function will be called every time an event is detected. It should take a
+ * DB_Event struct as an argument and return nothing.
+ * ex:
+ * void Event_Handler(DB_Event ev) {
+ *   if (ev.btn == &buttons[0]) {
+ *     // do something
+ *   }
+ *   else if (ev.btn == &buttons[1]) {
+ *     // do something else
+ *   }
+ * }
+ *
+ * 2. Add your event manager to DB_Init.
+ * Pass a pointer to your event manager to DB_Init during your initial setup.
+ * ex:
+ * DB_Init(&db, buttons, count, Read_GPIO, Event_Handler);
  */
 
 #define EVENT_QUEUE_SIZE 8
@@ -141,6 +190,8 @@ void DB_Init(DB_Handle *db, DB_Button *buttons, uint8_t count, DB_GPIO_Read rd, 
 
 /*
  * Update each button's state using DB_Handle's user-defined GPIO reader.
+ * Performs event callbacks and sets rising and falling edge flags for
+ * polling functions.
  *
  * Run on a consistent tick. NOT ISR or thread safe.
  */
@@ -175,7 +226,7 @@ bool DB_Falling(DB_Button *btn);
 /*
  * Returns true if the debounced state of the button has changed since the last
  * DB_Falling call.
- * Clears the rising and falling edge flags on the button every time it is
+ * Clears the rising AND falling edge flags on the button every time it is
  * called.
  * ex:
  * bool x = DB_Falling(&buttons[1]);
