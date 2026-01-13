@@ -23,7 +23,7 @@
  * The pin number corresponds to the pin that your function from earlier will read.
  * The threshold determines how confident the debouncer must be before considering
  * the button state to be changed. Threshold also determines the minimum number of
- * DB_Update calls required before the state can change.
+ * DB_Update calls required between state changes.
  * This library will use pointers to these buttons to access and identify them.
  * Note: threshold must not equal 0
  * ex:
@@ -34,20 +34,20 @@
  *
  * 3. Initialize debouncer.
  * Declare an empty DB_Handle and run DB_Init using your handle, button array,
- * button array length, and the pin reading function you wrote in step 1.
+ * button array length, and the GPIO reading function you wrote in step 1.
  *
  * Note: the DB_Handle must be declared in a scope where the call to DB_Update
  * in the next step will still have access to it.
  * ex:
  * DB_Handle db; // may be declared in a higher scope
  * uint8_t count = sizeof(buttons)/sizeof(DB_Button); // calculate length of buttons array
- * DB_Init(&db, buttons, count, Read_GPIO, NULL);
+ * DB_Init(&db, buttons, count, Read_GPIO, NULL); // optional arguments are left NULL
  *
  * 4. Call DB_Update() at a relatively consistent interval.
  * Every time DB_Update is called, it will query every button in the DB_Handle
  * you provided, and update the debounced state of each button.
- * Note: dramatically irregular timing of DB_Update calls may negatively affect
- *   debounce quality.
+ * Note: dramatically irregular or sparse timing of DB_Update calls may
+ *   negatively affect debounce quality.
  * ex:
  * DB_Update(&db);
  */
@@ -94,7 +94,7 @@
  * }
  *
  * 2. Add your event manager to DB_Init.
- * Pass a pointer to your event manager to DB_Init during your initial setup.
+ * Pass a pointer to your event handler to DB_Init during your initial setup.
  * ex:
  * DB_Init(&db, buttons, count, Read_GPIO, Event_Handler);
  */
@@ -109,7 +109,7 @@ extern "C" {
 #endif
 
 /*
- * Represents a GPIO input pin.
+ * Represents a mechanical button accessed through GPIO.
  *
  * const uint8_t pin: An integer pin ID. Pin ID should correspond to which pin
  *   will be read by the DB_GPIO_Read function provided by the user in
